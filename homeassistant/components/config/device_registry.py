@@ -36,6 +36,7 @@ SCHEMA_WS_UPDATE = websocket_api.BASE_COMMAND_MESSAGE_SCHEMA.extend(
         # We only allow setting disabled_by user via API.
         # No Enum support like this in voluptuous, use .value
         vol.Optional("disabled_by"): vol.Any(DeviceEntryDisabler.USER.value, None),
+        vol.Optional("aliases"): list,
     }
 )
 
@@ -92,6 +93,10 @@ def websocket_update_device(hass, connection, msg):
 
     msg.pop("type")
     msg_id = msg.pop("id")
+
+    if "aliases" in msg:
+        # Convert aliases to a set
+        msg["aliases"] = set(msg["aliases"])
 
     if msg.get("disabled_by") is not None:
         msg["disabled_by"] = DeviceEntryDisabler(msg["disabled_by"])
@@ -158,6 +163,7 @@ async def websocket_remove_config_entry_from_device(
 def _entry_dict(entry):
     """Convert entry to API format."""
     return {
+        "aliases": entry.aliases,
         "area_id": entry.area_id,
         "configuration_url": entry.configuration_url,
         "config_entries": list(entry.config_entries),
